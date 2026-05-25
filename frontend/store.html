@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS OS — Tienda de Apps</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c10; --bg2: #0d1117; --bg3: #111820;
+    --surface: #151e28; --surface2: #1a2433; --surface3: #1f2c3d;
+    --border: rgba(99,213,255,0.07); --border-h: rgba(99,213,255,0.18);
+    --accent: #63d5ff; --accent2: #7b5ea7; --accent3: #00e5a0;
+    --warn: #ffb84d; --danger: #ff4d6d;
+    --text: #e8f4f8; --text2: rgba(232,244,248,0.55); --text3: rgba(232,244,248,0.25);
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', sans-serif;
+    --body: 'Inter', sans-serif;
+    --r: 12px; --rl: 18px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    font-family: var(--body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(99,213,255,0.012) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99,213,255,0.012) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index:0;
+  }
+
+  /* Layout */
+  .layout { display:grid; grid-template-columns:72px 1fr; min-height:100vh; position:relative; z-index:1; }
+
+  /* Sidebar */
+  .sidebar {
+    display:flex; flex-direction:column; align-items:center;
+    padding:20px 0; gap:6px;
+    border-right:1px solid var(--border);
+    background:rgba(13,17,23,0.85);
+    backdrop-filter:blur(12px);
+    position:sticky; top:0; height:100vh;
+  }
+  .logo { width:40px; height:40px; margin-bottom:16px; }
+  .logo svg { width:100%; height:100%; }
+  .nav-item {
+    width:44px; height:44px;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:10px; cursor:pointer;
+    transition:all 0.2s; color:var(--text3);
+  }
+  .nav-item:hover { color:var(--text2); background:var(--surface); }
+  .nav-item.active {
+    color:var(--accent);
+    background:rgba(99,213,255,0.08);
+  }
+  .nav-item.active::before {
+    content:''; position:absolute; left:0;
+    height:40%; width:2px;
+    background:var(--accent); border-radius:0 2px 2px 0;
+  }
+  .nav-item { position:relative; }
+  .nav-item svg { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .nav-spacer { flex:1; }
+  .nav-dot { width:6px; height:6px; border-radius:50%; background:var(--accent3); box-shadow:0 0 8px var(--accent3); margin:8px 0; }
+
+  /* Header */
+  .header {
+    display:flex; align-items:center; gap:16px;
+    padding:16px 28px;
+    border-bottom:1px solid var(--border);
+    background:rgba(8,12,16,0.85);
+    backdrop-filter:blur(12px);
+    flex-shrink:0;
+  }
+  .header-back {
+    width:34px; height:34px;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:8px; border:1px solid var(--border);
+    background:var(--surface); cursor:pointer;
+    color:var(--text2); transition:all 0.2s;
+    text-decoration:none;
+  }
+  .header-back:hover { border-color:var(--border-h); color:var(--text); }
+  .header-back svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .header-title { font-family:var(--sans); font-size:16px; font-weight:700; letter-spacing:-0.02em; }
+  .header-sub { font-size:11px; color:var(--text3); font-family:var(--mono); }
+  .header-spacer { flex:1; }
+  .header-count { font-family:var(--mono); font-size:12px; color:var(--text3); }
+
+  /* Search + filters */
+  .controls {
+    padding:20px 28px 0;
+    display:flex; flex-direction:column; gap:16px;
+  }
+  .search-row { display:flex; gap:12px; align-items:center; }
+  .search-wrap {
+    flex:1; display:flex; align-items:center; gap:10px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; padding:10px 16px;
+    transition:border-color 0.2s;
+  }
+  .search-wrap:focus-within { border-color:var(--border-h); }
+  .search-wrap svg { width:15px; height:15px; stroke:var(--text3); flex-shrink:0; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  #search-input {
+    background:none; border:none; outline:none;
+    color:var(--text); font-family:var(--body); font-size:14px; width:100%;
+  }
+  #search-input::placeholder { color:var(--text3); }
+  .sort-select {
+    background:var(--surface); border:1px solid var(--border);
+    color:var(--text2); padding:10px 14px;
+    border-radius:10px; font-family:var(--mono); font-size:12px;
+    cursor:pointer; outline:none; appearance:none;
+    padding-right:30px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(232,244,248,0.3)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 10px center;
+  }
+
+  /* Categories pills */
+  .cats {
+    display:flex; gap:8px; flex-wrap:wrap;
+    padding-bottom:4px;
+  }
+  .cat-pill {
+    display:flex; align-items:center; gap:6px;
+    padding:6px 14px;
+    border-radius:20px; border:1px solid var(--border);
+    background:var(--surface);
+    cursor:pointer; transition:all 0.2s;
+    font-size:12px; color:var(--text2);
+    white-space:nowrap; user-select:none;
+  }
+  .cat-pill:hover { border-color:var(--border-h); color:var(--text); }
+  .cat-pill.active {
+    background:rgba(99,213,255,0.1);
+    border-color:rgba(99,213,255,0.3);
+    color:var(--accent);
+  }
+  .cat-pill .cat-icon { font-size:13px; }
+  .cat-count {
+    font-family:var(--mono); font-size:10px;
+    color:var(--text3);
+    background:rgba(255,255,255,0.05);
+    padding:1px 6px; border-radius:10px;
+  }
+
+  /* Apps grid */
+  .apps-section {
+    padding:20px 28px 40px;
+    flex:1;
+  }
+  .section-label {
+    font-family:var(--sans); font-size:11px; font-weight:600;
+    color:var(--text3); text-transform:uppercase; letter-spacing:0.1em;
+    margin-bottom:14px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .section-label::before { content:''; width:12px; height:2px; background:var(--accent); border-radius:1px; }
+
+  .apps-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+    gap:14px;
+  }
+
+  /* App card */
+  .app-card {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--rl);
+    padding:20px;
+    cursor:default;
+    transition:all 0.25s ease;
+    position:relative;
+    overflow:hidden;
+    display:flex; flex-direction:column; gap:14px;
+  }
+  .app-card:hover {
+    border-color:var(--border-h);
+    background:var(--surface2);
+    transform:translateY(-2px);
+  }
+  .app-card.installed {
+    border-color:rgba(0,229,160,0.2);
+  }
+  .app-card.installed::before {
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg, transparent, var(--accent3), transparent);
+  }
+
+  /* Card header */
+  .card-head { display:flex; align-items:flex-start; gap:12px; }
+  .app-icon-wrap {
+    width:48px; height:48px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; flex-shrink:0;
+    border:1px solid rgba(255,255,255,0.06);
+  }
+  .app-info { flex:1; min-width:0; }
+  .app-name { font-family:var(--sans); font-size:15px; font-weight:700; margin-bottom:2px; }
+  .app-tagline { font-size:12px; color:var(--text2); line-height:1.4; }
+
+  .app-badge {
+    display:inline-flex; align-items:center; padding:2px 7px;
+    border-radius:4px; font-size:10px; font-family:var(--mono);
+    font-weight:700; letter-spacing:0.04em; text-transform:uppercase;
+    flex-shrink:0;
+  }
+  .badge-running { background:rgba(0,229,160,0.1); color:var(--accent3); border:1px solid rgba(0,229,160,0.2); }
+  .badge-stopped { background:rgba(255,255,255,0.05); color:var(--text3); border:1px solid rgba(255,255,255,0.08); }
+  .badge-official { background:rgba(99,213,255,0.08); color:var(--accent); border:1px solid rgba(99,213,255,0.15); }
+
+  /* Meta row */
+  .app-meta {
+    display:flex; gap:8px; flex-wrap:wrap;
+  }
+  .meta-chip {
+    display:flex; align-items:center; gap:5px;
+    font-size:11px; color:var(--text3);
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--border);
+    padding:3px 9px; border-radius:6px;
+  }
+  .meta-chip svg { width:11px; height:11px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+  /* Tags */
+  .app-tags { display:flex; gap:5px; flex-wrap:wrap; }
+  .tag-item {
+    font-size:10px; color:var(--text3);
+    padding:2px 7px; border-radius:4px;
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--border);
+    font-family:var(--mono);
+  }
+
+  /* Actions */
+  .card-actions { display:flex; gap:8px; margin-top:2px; }
+  .btn-install {
+    flex:1; padding:10px;
+    background:rgba(99,213,255,0.1);
+    border:1px solid rgba(99,213,255,0.25);
+    border-radius:8px; color:var(--accent);
+    font-family:var(--sans); font-size:13px; font-weight:600;
+    cursor:pointer; transition:all 0.2s;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .btn-install:hover { background:rgba(99,213,255,0.18); border-color:rgba(99,213,255,0.45); }
+  .btn-install:disabled { opacity:0.4; cursor:not-allowed; }
+  .btn-install svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+
+  .btn-stop {
+    padding:10px 14px;
+    background:rgba(255,184,77,0.08);
+    border:1px solid rgba(255,184,77,0.2);
+    border-radius:8px; color:var(--warn);
+    font-family:var(--mono); font-size:11px;
+    cursor:pointer; transition:all 0.2s;
+  }
+  .btn-stop:hover { background:rgba(255,184,77,0.15); }
+
+  .btn-remove {
+    padding:10px 14px;
+    background:rgba(255,77,109,0.05);
+    border:1px solid rgba(255,77,109,0.15);
+    border-radius:8px; color:var(--danger);
+    font-family:var(--mono); font-size:11px;
+    cursor:pointer; transition:all 0.2s;
+  }
+  .btn-remove:hover { background:rgba(255,77,109,0.12); }
+
+  /* Empty state */
+  .empty-state {
+    grid-column: 1/-1;
+    text-align:center; padding:60px 20px;
+    color:var(--text3);
+  }
+  .empty-icon { font-size:40px; margin-bottom:12px; opacity:0.4; }
+  .empty-text { font-family:var(--mono); font-size:13px; }
+
+  /* Loading spinner */
+  .loading {
+    grid-column:1/-1;
+    display:flex; flex-direction:column; align-items:center; gap:12px;
+    padding:60px; color:var(--text3);
+  }
+  .spinner {
+    width:32px; height:32px; border:2px solid var(--border);
+    border-top-color:var(--accent); border-radius:50%;
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* Toast */
+  #toast-container {
+    position:fixed; bottom:24px; right:24px;
+    display:flex; flex-direction:column; gap:8px;
+    z-index:1000;
+  }
+  .toast {
+    padding:12px 18px;
+    border-radius:10px; border:1px solid;
+    font-size:13px; font-family:var(--mono);
+    animation:toast-in 0.3s ease;
+    max-width:340px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .toast-ok    { background:rgba(0,229,160,0.12); border-color:rgba(0,229,160,0.25); color:var(--accent3); }
+  .toast-err   { background:rgba(255,77,109,0.12); border-color:rgba(255,77,109,0.25); color:var(--danger); }
+  .toast-info  { background:rgba(99,213,255,0.1); border-color:rgba(99,213,255,0.2); color:var(--accent); }
+  @keyframes toast-in { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+  /* Modal de instalación */
+  .modal-overlay {
+    position:fixed; inset:0; z-index:500;
+    background:rgba(0,0,0,0.75); backdrop-filter:blur(4px);
+    display:none; align-items:center; justify-content:center;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:var(--bg2);
+    border:1px solid var(--border-h);
+    border-radius:var(--rl);
+    padding:28px;
+    width:100%; max-width:440px;
+    animation:modal-in 0.2s ease;
+  }
+  @keyframes modal-in { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
+  .modal-title { font-family:var(--sans); font-size:18px; font-weight:700; margin-bottom:6px; }
+  .modal-sub   { font-size:13px; color:var(--text2); margin-bottom:20px; }
+  .modal-field { margin-bottom:14px; }
+  .modal-label { font-size:11px; color:var(--text3); font-family:var(--mono); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.06em; display:block; }
+  .modal-input {
+    width:100%; padding:10px 14px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; color:var(--text);
+    font-family:var(--mono); font-size:13px; outline:none;
+    transition:border-color 0.2s;
+  }
+  .modal-input:focus { border-color:var(--border-h); }
+  .modal-input::placeholder { color:var(--text3); }
+  .modal-note {
+    font-size:11px; color:var(--text3); font-family:var(--mono);
+    margin-top:5px;
+  }
+  .modal-actions { display:flex; gap:10px; margin-top:20px; }
+  .btn-cancel {
+    flex:1; padding:11px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; color:var(--text2);
+    font-family:var(--sans); font-size:13px; cursor:pointer;
+    transition:all 0.2s;
+  }
+  .btn-cancel:hover { border-color:var(--border-h); color:var(--text); }
+  .btn-confirm {
+    flex:2; padding:11px;
+    background:rgba(99,213,255,0.12);
+    border:1px solid rgba(99,213,255,0.3);
+    border-radius:8px; color:var(--accent);
+    font-family:var(--sans); font-size:13px; font-weight:600;
+    cursor:pointer; transition:all 0.2s;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .btn-confirm:hover { background:rgba(99,213,255,0.2); }
+  .btn-confirm:disabled { opacity:0.5; cursor:not-allowed; }
+
+  /* Progress bar en modal */
+  .install-progress {
+    display:none; margin-top:16px;
+  }
+  .install-progress.show { display:block; }
+  .progress-track {
+    height:3px; background:rgba(255,255,255,0.06);
+    border-radius:2px; overflow:hidden;
+  }
+  .progress-fill {
+    height:100%; background:var(--accent);
+    border-radius:2px;
+    transition:width 0.4s ease;
+    animation:pulse-bar 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse-bar { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+  .progress-label {
+    font-size:11px; color:var(--text3); font-family:var(--mono);
+    margin-top:8px;
+  }
+</style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<!-- Modal de instalación -->
+<div class="modal-overlay" id="install-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-app-name">Instalar App</div>
+    <div class="modal-sub" id="modal-app-desc">Configuración de instalación</div>
+
+    <div id="modal-fields">
+      <!-- Campos dinámicos según la app -->
+    </div>
+
+    <div class="install-progress" id="install-progress">
+      <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      <div class="progress-label" id="progress-label">Preparando...</div>
+    </div>
+
+    <div class="modal-actions" id="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" id="btn-confirm-install" onclick="confirmInstall()">
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Instalar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="4" width="32" height="32" rx="8" stroke="#63d5ff" stroke-width="1.5"/>
+        <path d="M12 20h16M20 12v16M14 14l12 12M26 14L14 26" stroke="#63d5ff" stroke-width="1.2" stroke-linecap="round" opacity="0.4"/>
+        <circle cx="20" cy="20" r="4" fill="#63d5ff" opacity="0.8"/>
+        <circle cx="20" cy="20" r="2" fill="#080c10"/>
+      </svg>
+    </div>
+    <div class="nav-item" title="Dashboard" onclick="location.href='index.html'">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    </div>
+    <div class="nav-item active" title="Tienda">
+      <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    </div>
+    <div class="nav-item" title="Red">
+      <svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+    </div>
+    <div class="nav-item" title="Almacenamiento">
+      <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+    </div>
+    <div class="nav-spacer"></div>
+    <div class="nav-dot"></div>
+    <div class="nav-item" title="Ajustes">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main style="display:flex; flex-direction:column; overflow:hidden;">
+    <!-- Header -->
+    <header class="header">
+      <a class="header-back" href="index.html" title="Volver al dashboard">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </a>
+      <div>
+        <div class="header-title">Tienda de Aplicaciones</div>
+        <div class="header-sub">Catálogo NEXUS OS · Docker</div>
+      </div>
+      <div class="header-spacer"></div>
+      <div class="header-count" id="header-count">Cargando...</div>
+    </header>
+
+    <!-- Controls -->
+    <div class="controls">
+      <div class="search-row">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input id="search-input" type="text" placeholder="Buscar por nombre, categoría o función..." autocomplete="off">
+        </div>
+        <select class="sort-select" id="sort-select">
+          <option value="">Ordenar: Defecto</option>
+          <option value="name">Ordenar: A–Z</option>
+          <option value="installed">Solo instaladas</option>
+        </select>
+      </div>
+      <div class="cats" id="cats-row">
+        <!-- Generado dinámicamente -->
+      </div>
+    </div>
+
+    <!-- Apps -->
+    <div class="apps-section">
+      <div class="section-label" id="section-label">Todas las apps</div>
+      <div class="apps-grid" id="apps-grid">
+        <div class="loading">
+          <div class="spinner"></div>
+          <span style="font-family:var(--mono);font-size:12px;">Cargando catálogo...</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── Estado global ──────────────────────────────────────────────────────────
+const API = '/api';
+const TOKEN = localStorage.getItem('nexus_token') || '';
+let CATALOG = { apps: [], categories: [] };
+let activeCategory = '';
+let currentAppId = null;
+let installing = false;
+
+const headers = {
+  'Content-Type': 'application/json',
+  ...(TOKEN ? { 'Authorization': `Bearer ${TOKEN}` } : {}),
+};
+
+// ── API helpers ────────────────────────────────────────────────────────────
+async function apiFetch(url, opts = {}) {
+  try {
+    const res = await fetch(API + url, { headers, ...opts });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
+  } catch (e) {
+    throw new Error(e.message);
+  }
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function toast(msg, type = 'info', duration = 4000) {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  const icons = { ok: '✓', err: '✗', info: '→' };
+  el.innerHTML = `<span>${icons[type] || '→'}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), duration);
+}
+
+// ── Render catálogo ────────────────────────────────────────────────────────
+async function loadCatalog() {
+  try {
+    // Intentar cargar del JSON local (modo sin backend)
+    const res = await fetch('apps-catalog.json').catch(() => null);
+    if (res && res.ok) {
+      const data = await res.json();
+      CATALOG = data;
+    } else {
+      // Fallback: cargar del API
+      const data = await apiFetch('/apps/catalog');
+      CATALOG = data;
+    }
+    renderCategories();
+    renderApps();
+  } catch (e) {
+    document.getElementById('apps-grid').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚠️</div>
+        <div class="empty-text">No se pudo cargar el catálogo<br>${e.message}</div>
+      </div>`;
+  }
+}
+
+function renderCategories() {
+  const row = document.getElementById('cats-row');
+  const counts = {};
+  CATALOG.apps.forEach(a => { counts[a.category] = (counts[a.category] || 0) + 1; });
+
+  const allPill = `
+    <div class="cat-pill active" data-cat="" onclick="filterCat(this, '')">
+      <span class="cat-icon">🌐</span>
+      Todo
+      <span class="cat-count">${CATALOG.apps.length}</span>
+    </div>`;
+
+  const pills = CATALOG.categories.map(c => `
+    <div class="cat-pill" data-cat="${c.id}" onclick="filterCat(this, '${c.id}')">
+      <span class="cat-icon">${c.icon}</span>
+      ${c.name}
+      <span class="cat-count">${counts[c.id] || 0}</span>
+    </div>`).join('');
+
+  row.innerHTML = allPill + pills;
+}
+
+function filterCat(el, cat) {
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  activeCategory = cat;
+  renderApps();
+}
+
+function renderApps() {
+  const grid = document.getElementById('apps-grid');
+  const search = document.getElementById('search-input').value.toLowerCase().trim();
+  const sort   = document.getElementById('sort-select').value;
+
+  let apps = [...CATALOG.apps];
+
+  if (activeCategory) apps = apps.filter(a => a.category === activeCategory);
+  if (search) apps = apps.filter(a =>
+    a.name.toLowerCase().includes(search) ||
+    a.tagline.toLowerCase().includes(search) ||
+    (a.tags || []).some(t => t.toLowerCase().includes(search))
+  );
+  if (sort === 'name')      apps.sort((a,b) => a.name.localeCompare(b.name));
+  if (sort === 'installed') apps = apps.filter(a => a.installed);
+
+  const catName = activeCategory
+    ? (CATALOG.categories.find(c => c.id === activeCategory)?.name || activeCategory)
+    : 'Todas las apps';
+  document.getElementById('section-label').textContent = catName;
+  document.getElementById('header-count').textContent = `${apps.length} apps`;
+
+  if (!apps.length) {
+    grid.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-text">Sin resultados para "${search || activeCategory}"</div>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = apps.map(app => renderCard(app)).join('');
+}
+
+function renderCard(app) {
+  const isInstalled = app.installed;
+  const status      = app.installedStatus;
+
+  const badges = [];
+  if (isInstalled && status === 'running') badges.push(`<span class="app-badge badge-running">● activo</span>`);
+  if (isInstalled && status !== 'running') badges.push(`<span class="app-badge badge-stopped">○ detenido</span>`);
+  if (app.official && !isInstalled)        badges.push(`<span class="app-badge badge-official">oficial</span>`);
+
+  const ramLabel = app.ram_mb >= 1024
+    ? `${(app.ram_mb/1024).toFixed(1)} GB`
+    : `${app.ram_mb} MB`;
+
+  const actions = isInstalled ? `
+    <div class="card-actions">
+      <button class="btn-install" onclick="openLogsModal('${app.id}')">
+        <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        Logs
+      </button>
+      ${status === 'running'
+        ? `<button class="btn-stop" onclick="stopApp('${app.id}')">Detener</button>`
+        : `<button class="btn-install" onclick="startApp('${app.id}')" style="background:rgba(0,229,160,0.1);border-color:rgba(0,229,160,0.25);color:var(--accent3)">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Iniciar
+           </button>`}
+      <button class="btn-remove" onclick="removeApp('${app.id}', '${app.name}')">✕</button>
+    </div>` : `
+    <div class="card-actions">
+      <button class="btn-install" onclick="openInstallModal('${app.id}')">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Instalar
+      </button>
+    </div>`;
+
+  return `
+    <div class="app-card${isInstalled ? ' installed' : ''}" id="card-${app.id}">
+      <div class="card-head">
+        <div class="app-icon-wrap" style="background: ${app.color}22;">
+          ${app.icon}
+        </div>
+        <div class="app-info">
+          <div class="app-name">${app.name}</div>
+          <div class="app-tagline">${app.tagline}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
+          ${badges.join('')}
+        </div>
+      </div>
+
+      <div class="app-meta">
+        <div class="meta-chip">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+          v${app.version}
+        </div>
+        <div class="meta-chip">
+          <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+          ${ramLabel} RAM
+        </div>
+        <div class="meta-chip">
+          <svg viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg>
+          :${app.port}
+        </div>
+      </div>
+
+      <div class="app-tags">
+        ${(app.tags || []).map(t => `<span class="tag-item">${t}</span>`).join('')}
+      </div>
+
+      ${actions}
+    </div>`;
+}
+
+// ── Modal de instalación ───────────────────────────────────────────────────
+function openInstallModal(appId) {
+  const app = CATALOG.apps.find(a => a.id === appId);
+  if (!app) return;
+  currentAppId = appId;
+
+  document.getElementById('modal-app-name').textContent = `Instalar ${app.name}`;
+  document.getElementById('modal-app-desc').textContent = app.tagline;
+
+  // Generar campos dinámicos según variables de entorno de la app
+  const fieldsEl = document.getElementById('modal-fields');
+  const service   = Object.values(app.compose.services)[0];
+  const env       = service.environment || {};
+  const fields    = [];
+
+  for (const [k, v] of Object.entries(env)) {
+    if (typeof v === 'string' && v.startsWith('${')) {
+      const varName = v.replace(/\$\{(.+?)(?::-.*)?\}/, '$1');
+      const isPass  = varName.toLowerCase().includes('pass') || varName.toLowerCase().includes('token');
+      fields.push({ key: varName, label: varName.replace(/_/g, ' '), isPass });
+    }
+  }
+
+  // Siempre mostrar el puerto (por si hay conflicto)
+  fieldsEl.innerHTML = `
+    <div class="modal-field">
+      <label class="modal-label">Puerto local</label>
+      <input class="modal-input" type="number" id="field-port" value="${app.port}" placeholder="${app.port}">
+      <div class="modal-note">Puerto donde quedará accesible la app</div>
+    </div>
+    ${fields.map(f => `
+    <div class="modal-field">
+      <label class="modal-label">${f.label}</label>
+      <input class="modal-input" type="${f.isPass ? 'password' : 'text'}"
+             id="field-${f.key}" placeholder="${f.isPass ? '••••••••' : f.key.toLowerCase()}">
+      ${f.isPass ? '<div class="modal-note">Se guardará cifrado</div>' : ''}
+    </div>`).join('')}`;
+
+  document.getElementById('install-progress').classList.remove('show');
+  document.getElementById('modal-actions').style.display = 'flex';
+  document.getElementById('btn-confirm-install').disabled = false;
+  document.getElementById('install-modal').classList.add('open');
+}
+
+function closeModal() {
+  if (installing) return;
+  document.getElementById('install-modal').classList.remove('open');
+  currentAppId = null;
+}
+
+async function confirmInstall() {
+  if (!currentAppId || installing) return;
+  const app = CATALOG.apps.find(a => a.id === currentAppId);
+  if (!app) return;
+
+  installing = true;
+  document.getElementById('btn-confirm-install').disabled = true;
+  document.getElementById('install-progress').classList.add('show');
+
+  // Recoger valores del formulario
+  const userConfig = {};
+  const service = Object.values(app.compose.services)[0];
+  const env = service.environment || {};
+  for (const [k, v] of Object.entries(env)) {
+    if (typeof v === 'string' && v.startsWith('${')) {
+      const varName = v.replace(/\$\{(.+?)(?::-.*)?\}/, '$1');
+      const fieldEl = document.getElementById(`field-${varName}`);
+      if (fieldEl?.value) userConfig[varName] = fieldEl.value;
+    }
+  }
+
+  const steps = [
+    [20, 'Descargando imagen Docker...'],
+    [50, `Configurando ${app.name}...`],
+    [75, 'Iniciando contenedor...'],
+    [90, 'Verificando servicio...'],
+  ];
+
+  // Simulación visual del progreso
+  let stepIdx = 0;
+  const progressInterval = setInterval(() => {
+    if (stepIdx < steps.length) {
+      const [pct, label] = steps[stepIdx++];
+      document.getElementById('progress-fill').style.width = pct + '%';
+      document.getElementById('progress-label').textContent = label;
+    }
+  }, 800);
+
+  try {
+    await apiFetch('/apps/install', {
+      method: 'POST',
+      body: JSON.stringify({ appId: currentAppId, userConfig }),
+    });
+
+    clearInterval(progressInterval);
+    document.getElementById('progress-fill').style.width = '100%';
+    document.getElementById('progress-label').textContent = `${app.name} instalado correctamente`;
+
+    setTimeout(() => {
+      closeModal();
+      installing = false;
+      // Marcar como instalada en el catálogo local
+      const catalogApp = CATALOG.apps.find(a => a.id === currentAppId);
+      if (catalogApp) { catalogApp.installed = true; catalogApp.installedStatus = 'running'; }
+      renderApps();
+      toast(`${app.name} instalado en el puerto ${app.port}`, 'ok');
+    }, 1200);
+  } catch (e) {
+    clearInterval(progressInterval);
+    installing = false;
+
+    // Modo demo sin backend: simular instalación
+    if (e.message.includes('Failed to fetch') || e.message.includes('404')) {
+      document.getElementById('progress-fill').style.width = '100%';
+      document.getElementById('progress-label').textContent = `[DEMO] ${app.name} instalado simulado`;
+      setTimeout(() => {
+        closeModal();
+        installing = false;
+        const catalogApp = CATALOG.apps.find(a => a.id === currentAppId);
+        if (catalogApp) { catalogApp.installed = true; catalogApp.installedStatus = 'running'; }
+        renderApps();
+        toast(`[DEMO] ${app.name} listo en :${app.port}`, 'ok');
+      }, 1200);
+      return;
+    }
+
+    document.getElementById('install-progress').classList.remove('show');
+    document.getElementById('btn-confirm-install').disabled = false;
+    document.getElementById('modal-actions').style.display = 'flex';
+    toast(`Error al instalar: ${e.message}`, 'err');
+  }
+}
+
+// ── Controles de apps instaladas ───────────────────────────────────────────
+async function startApp(appId) {
+  try {
+    await apiFetch(`/apps/${appId}/start`, { method: 'POST' });
+    const app = CATALOG.apps.find(a => a.id === appId);
+    if (app) app.installedStatus = 'running';
+    renderApps();
+    toast(`App iniciada`, 'ok');
+  } catch (e) {
+    // Demo
+    const app = CATALOG.apps.find(a => a.id === appId);
+    if (app) app.installedStatus = 'running';
+    renderApps();
+    toast(`[DEMO] App iniciada`, 'ok');
+  }
+}
+
+async function stopApp(appId) {
+  const app = CATALOG.apps.find(a => a.id === appId);
+  try {
+    await apiFetch(`/apps/${appId}/stop`, { method: 'POST' });
+    if (app) app.installedStatus = 'exited';
+    renderApps();
+    toast(`${app?.name || 'App'} detenida`, 'info');
+  } catch {
+    if (app) app.installedStatus = 'exited';
+    renderApps();
+    toast(`[DEMO] ${app?.name || 'App'} detenida`, 'info');
+  }
+}
+
+async function removeApp(appId, appName) {
+  if (!confirm(`¿Eliminar ${appName}? Los datos del contenedor se conservarán.`)) return;
+  try {
+    await apiFetch(`/apps/${appId}`, { method: 'DELETE' });
+    const app = CATALOG.apps.find(a => a.id === appId);
+    if (app) { app.installed = false; app.installedStatus = null; }
+    renderApps();
+    toast(`${appName} eliminada`, 'info');
+  } catch {
+    const app = CATALOG.apps.find(a => a.id === appId);
+    if (app) { app.installed = false; app.installedStatus = null; }
+    renderApps();
+    toast(`[DEMO] ${appName} eliminada`, 'info');
+  }
+}
+
+function openLogsModal(appId) {
+  toast(`Logs de ${appId}: disponible con backend activo`, 'info');
+}
+
+// ── Eventos ────────────────────────────────────────────────────────────────
+document.getElementById('search-input').addEventListener('input', renderApps);
+document.getElementById('sort-select').addEventListener('change', renderApps);
+document.getElementById('install-modal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('install-modal')) closeModal();
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+loadCatalog();
+</script>
+</body>
+</html>
