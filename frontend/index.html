@@ -510,9 +510,9 @@
                   <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   Nueva app
                 </a>
-                <button class="action-btn danger" onclick="showNotif('Reiniciando...', 'ok')">
+                <button class="action-btn danger" onclick="doShutdown()">
                   <svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 11-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
-                  Reiniciar
+                  ⏻ Apagar
                 </button>
                 <button class="action-btn" onclick="refreshAll()">
                   <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
@@ -545,7 +545,7 @@
 <div class="notif" id="notif"></div>
 
 <script>
-const API = 'http://127.0.0.1:8090';
+const API = 'https://192.168.1.9:8443';
 let token = localStorage.getItem('nexus_token') || '';
 let wsMetrics = null;
 let cpuHistory = [];
@@ -680,7 +680,7 @@ async function loadDisk() {
 // ── WebSocket metrics ─────────────────────────────────────────────────────
 function connectWS() {
   try {
-    wsMetrics = new WebSocket(`ws://127.0.0.1:8090/api/ws/metrics`);
+    wsMetrics = new WebSocket(`wss://192.168.1.9:8443/api/ws/metrics`);
     wsMetrics.onmessage = e => {
       const m = JSON.parse(e.data);
       updateMetrics(m);
@@ -704,6 +704,32 @@ function addLog(msg, type='info') {
 function clearLogs() { document.getElementById('logTerminal').innerHTML = ''; }
 
 // ── Acciones ──────────────────────────────────────────────────────────────
+
+async function doShutdown() {
+  if (!confirm('¿Apagar el servidor? Perderás acceso al panel.')) return;
+  addLog('Apagando servidor...', 'warn');
+  showNotif('Apagando servidor...', 'ok');
+  try { await apiFetch('/api/system/shutdown', { method:'POST' }); } catch {}
+}
+async function doReboot() {
+  addLog('Reiniciando servidor...', 'warn');
+  showNotif('Reiniciando...', 'ok');
+  try { await apiFetch('/api/system/reboot', { method:'POST' }); } catch {}
+}
+
+
+async function doShutdown() {
+  if (!confirm('¿Apagar el servidor? Perderás acceso al panel.')) return;
+  addLog('Apagando servidor...', 'warn');
+  showNotif('Apagando servidor...', 'ok');
+  try { await apiFetch('/api/system/shutdown', { method:'POST' }); } catch {}
+}
+async function doReboot() {
+  if (!confirm('¿Reiniciar el servidor?')) return;
+  addLog('Reiniciando servidor...', 'warn');
+  showNotif('Reiniciando...', 'ok');
+  try { await apiFetch('/api/system/reboot', { method:'POST' }); } catch {}
+}
 async function doDockerPrune() {
   addLog('Limpiando recursos Docker no usados...', 'warn');
   try {
