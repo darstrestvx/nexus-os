@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS OS — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c10; --bg2: #0d1117; --bg3: #111820;
+    --surface: #151e28; --surface2: #1a2433; --surface3: #1f2c3d;
+    --border: rgba(99,213,255,0.07); --border-h: rgba(99,213,255,0.18);
+    --accent: #63d5ff; --accent2: #7b5ea7; --accent3: #00e5a0;
+    --warn: #ffb84d; --danger: #ff4d6d;
+    --text: #e8f4f8; --text2: rgba(232,244,248,0.55); --text3: rgba(232,244,248,0.25);
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', sans-serif;
+    --body: 'Inter', sans-serif;
+    --r: 12px; --rl: 18px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    font-family: var(--body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(99,213,255,0.012) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99,213,255,0.012) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index:0;
+  }
+
+  /* Layout */
+  .layout { display:grid; grid-template-columns:72px 1fr; min-height:100vh; position:relative; z-index:1; }
+
+  /* Sidebar */
+  .sidebar {
+    display:flex; flex-direction:column; align-items:center;
+    padding:20px 0; gap:6px;
+    border-right:1px solid var(--border);
+    background:rgba(13,17,23,0.85);
+    backdrop-filter:blur(12px);
+    position:sticky; top:0; height:100vh;
+  }
+  .logo { width:40px; height:40px; margin-bottom:16px; }
+  .logo svg { width:100%; height:100%; }
+  .nav-item {
+    width:44px; height:44px;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:10px; cursor:pointer;
+    transition:all 0.2s; color:var(--text3);
+    position:relative; text-decoration:none;
+  }
+  .nav-item:hover { color:var(--text2); background:var(--surface); }
+  .nav-item.active {
+    color:var(--accent);
+    background:rgba(99,213,255,0.08);
+  }
+  .nav-item.active::before {
+    content:''; position:absolute; left:0;
+    height:40%; width:2px;
+    background:var(--accent); border-radius:0 2px 2px 0;
+  }
+  .nav-item svg { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .nav-spacer { flex:1; }
+  .nav-dot { width:6px; height:6px; border-radius:50%; background:var(--accent3); box-shadow:0 0 8px var(--accent3); margin:8px 0; }
+  .nav-tooltip {
+    position:absolute; left:56px;
+    background:var(--surface2); border:1px solid var(--border-h);
+    color:var(--text); font-family:var(--mono); font-size:11px;
+    padding:4px 10px; border-radius:6px;
+    white-space:nowrap; pointer-events:none;
+    opacity:0; transition:opacity 0.15s;
+    z-index:100;
+  }
+  .nav-item:hover .nav-tooltip { opacity:1; }
+
+  /* Main */
+  .main { display:flex; flex-direction:column; min-height:100vh; overflow:hidden; }
+
+  /* Header */
+  .header {
+    display:flex; align-items:center; gap:16px;
+    padding:16px 28px;
+    border-bottom:1px solid var(--border);
+    background:rgba(8,12,16,0.85);
+    backdrop-filter:blur(12px);
+    flex-shrink:0;
+  }
+  .header-title { font-family:var(--sans); font-size:16px; font-weight:700; letter-spacing:-0.02em; }
+  .header-sub { font-size:11px; color:var(--text3); font-family:var(--mono); }
+  .header-spacer { flex:1; }
+  .header-time { font-family:var(--mono); font-size:12px; color:var(--text3); }
+  .status-dot {
+    width:8px; height:8px; border-radius:50%;
+    background:var(--accent3); box-shadow:0 0 8px var(--accent3);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; } 50% { opacity:0.4; }
+  }
+
+  /* Content */
+  .content { padding:24px 28px; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:24px; }
+
+  /* Section label */
+  .section-label {
+    font-family:var(--sans); font-size:11px; font-weight:600;
+    color:var(--text3); text-transform:uppercase; letter-spacing:0.1em;
+    margin-bottom:14px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .section-label::before { content:''; width:12px; height:2px; background:var(--accent); border-radius:1px; }
+
+  /* Stats row */
+  .stats-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
+    gap:14px;
+  }
+  .stat-card {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--rl);
+    padding:20px;
+    display:flex; flex-direction:column; gap:12px;
+    transition:all 0.25s;
+    position:relative; overflow:hidden;
+  }
+  .stat-card:hover { border-color:var(--border-h); background:var(--surface2); transform:translateY(-2px); }
+  .stat-card::after {
+    content:''; position:absolute;
+    top:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity:0; transition:opacity 0.3s;
+  }
+  .stat-card:hover::after { opacity:0.4; }
+  .stat-header { display:flex; align-items:center; justify-content:space-between; }
+  .stat-label { font-size:11px; color:var(--text3); font-family:var(--mono); text-transform:uppercase; letter-spacing:0.08em; }
+  .stat-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; }
+  .stat-icon svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .stat-value { font-family:var(--sans); font-size:28px; font-weight:800; letter-spacing:-0.03em; line-height:1; }
+  .stat-sub { font-size:11px; color:var(--text3); }
+  .stat-bar { height:3px; border-radius:2px; background:rgba(255,255,255,0.06); overflow:hidden; }
+  .stat-bar-fill { height:100%; border-radius:2px; transition:width 1s ease; }
+
+  /* CPU */
+  .stat-cpu .stat-icon { background:rgba(99,213,255,0.1); color:var(--accent); }
+  .stat-cpu .stat-value { color:var(--accent); }
+  .stat-cpu .stat-bar-fill { background:linear-gradient(90deg, var(--accent2), var(--accent)); }
+
+  /* RAM */
+  .stat-ram .stat-icon { background:rgba(123,94,167,0.15); color:var(--accent2); }
+  .stat-ram .stat-value { color:var(--accent2); }
+  .stat-ram .stat-bar-fill { background:linear-gradient(90deg, var(--accent2), #a07fd4); }
+
+  /* Disco */
+  .stat-disk .stat-icon { background:rgba(255,184,77,0.1); color:var(--warn); }
+  .stat-disk .stat-value { color:var(--warn); }
+  .stat-disk .stat-bar-fill { background:linear-gradient(90deg, var(--warn), #ffd580); }
+
+  /* Docker */
+  .stat-docker .stat-icon { background:rgba(0,229,160,0.1); color:var(--accent3); }
+  .stat-docker .stat-value { color:var(--accent3); }
+
+  /* Two column layout */
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:900px) { .two-col { grid-template-columns:1fr; } }
+
+  /* Panel */
+  .panel {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--rl);
+    overflow:hidden;
+  }
+  .panel-header {
+    padding:16px 20px;
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .panel-title { font-family:var(--sans); font-size:13px; font-weight:700; }
+  .panel-action {
+    font-family:var(--mono); font-size:11px; color:var(--accent);
+    text-decoration:none; cursor:pointer;
+    transition:opacity 0.2s;
+  }
+  .panel-action:hover { opacity:0.7; }
+  .panel-body { padding:16px 20px; }
+
+  /* Container list */
+  .container-item {
+    display:flex; align-items:center; gap:12px;
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .container-item:last-child { border-bottom:none; padding-bottom:0; }
+  .container-item:first-child { padding-top:0; }
+  .container-status {
+    width:8px; height:8px; border-radius:50%; flex-shrink:0;
+  }
+  .container-status.running { background:var(--accent3); box-shadow:0 0 6px var(--accent3); }
+  .container-status.stopped { background:var(--danger); }
+  .container-status.unknown { background:var(--text3); }
+  .container-name { font-family:var(--mono); font-size:12px; flex:1; }
+  .container-image { font-size:11px; color:var(--text3); }
+  .container-badge {
+    font-family:var(--mono); font-size:10px;
+    padding:2px 8px; border-radius:20px;
+  }
+  .container-badge.running { background:rgba(0,229,160,0.1); color:var(--accent3); }
+  .container-badge.stopped { background:rgba(255,77,109,0.1); color:var(--danger); }
+
+  /* Log terminal */
+  .log-terminal {
+    background:var(--bg);
+    border-radius:10px;
+    padding:14px;
+    font-family:var(--mono);
+    font-size:11px;
+    line-height:1.7;
+    height:180px;
+    overflow-y:auto;
+    color:var(--text2);
+  }
+  .log-terminal::-webkit-scrollbar { width:4px; }
+  .log-terminal::-webkit-scrollbar-track { background:transparent; }
+  .log-terminal::-webkit-scrollbar-thumb { background:var(--border-h); border-radius:2px; }
+  .log-line { display:flex; gap:10px; }
+  .log-time { color:var(--text3); flex-shrink:0; }
+  .log-ok { color:var(--accent3); }
+  .log-warn { color:var(--warn); }
+  .log-err { color:var(--danger); }
+  .log-info { color:var(--accent); }
+
+  /* Uptime / info */
+  .info-grid { display:flex; flex-direction:column; gap:10px; }
+  .info-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); }
+  .info-row:last-child { border-bottom:none; }
+  .info-key { font-size:12px; color:var(--text3); }
+  .info-val { font-family:var(--mono); font-size:12px; color:var(--text2); }
+
+  /* Quick actions */
+  .actions-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .action-btn {
+    display:flex; align-items:center; gap:10px;
+    padding:12px 16px;
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:10px; cursor:pointer;
+    transition:all 0.2s; color:var(--text2);
+    font-size:13px;
+  }
+  .action-btn:hover { border-color:var(--border-h); color:var(--text); background:var(--surface3); }
+  .action-btn svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+  .action-btn.danger:hover { border-color:rgba(255,77,109,0.3); color:var(--danger); }
+
+  /* CPU chart */
+  .cpu-chart { height:60px; position:relative; }
+  canvas { width:100%; height:100%; }
+
+  /* Login overlay */
+  .login-overlay {
+    position:fixed; inset:0; z-index:1000;
+    background:rgba(8,12,16,0.97);
+    display:flex; align-items:center; justify-content:center;
+    backdrop-filter:blur(8px);
+  }
+  .login-box {
+    width:360px;
+    background:var(--surface);
+    border:1px solid var(--border-h);
+    border-radius:var(--rl);
+    padding:36px;
+    display:flex; flex-direction:column; gap:24px;
+  }
+  .login-logo { display:flex; align-items:center; gap:12px; }
+  .login-logo-icon { width:40px; height:40px; }
+  .login-title { font-family:var(--sans); font-size:20px; font-weight:800; }
+  .login-sub { font-size:12px; color:var(--text3); margin-top:2px; }
+  .login-field { display:flex; flex-direction:column; gap:8px; }
+  .login-label { font-size:11px; color:var(--text3); font-family:var(--mono); text-transform:uppercase; letter-spacing:0.08em; }
+  .login-input {
+    background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:10px 14px;
+    color:var(--text); font-family:var(--mono); font-size:13px;
+    outline:none; transition:border-color 0.2s;
+  }
+  .login-input:focus { border-color:var(--border-h); }
+  .login-btn {
+    background:rgba(99,213,255,0.1); border:1px solid rgba(99,213,255,0.25);
+    color:var(--accent); font-family:var(--sans); font-size:14px; font-weight:700;
+    padding:12px; border-radius:10px; cursor:pointer;
+    transition:all 0.2s; letter-spacing:0.02em;
+  }
+  .login-btn:hover { background:rgba(99,213,255,0.18); border-color:rgba(99,213,255,0.4); }
+  .login-error { font-size:12px; color:var(--danger); font-family:var(--mono); text-align:center; display:none; }
+
+  /* Notification */
+  .notif {
+    position:fixed; bottom:24px; right:24px; z-index:500;
+    background:var(--surface2); border:1px solid var(--border-h);
+    border-radius:10px; padding:12px 18px;
+    font-size:13px; font-family:var(--mono);
+    display:flex; align-items:center; gap:10px;
+    transform:translateY(80px); opacity:0;
+    transition:all 0.3s ease;
+    max-width:320px;
+  }
+  .notif.show { transform:translateY(0); opacity:1; }
+  .notif.ok { border-color:rgba(0,229,160,0.3); color:var(--accent3); }
+  .notif.err { border-color:rgba(255,77,109,0.3); color:var(--danger); }
+
+  /* Scrollbar */
+  .content::-webkit-scrollbar { width:4px; }
+  .content::-webkit-scrollbar-track { background:transparent; }
+  .content::-webkit-scrollbar-thumb { background:var(--border-h); border-radius:2px; }
+
+  /* Fade in */
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(12px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  .stats-grid, .two-col { animation: fadeUp 0.4s ease both; }
+  .two-col { animation-delay:0.1s; }
+</style>
+</head>
+<body>
+
+<!-- Login overlay -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg class="login-logo-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="40" height="40" rx="10" fill="rgba(99,213,255,0.08)" stroke="rgba(99,213,255,0.2)" stroke-width="1"/>
+        <path d="M10 20 L16 12 L24 28 L30 20" stroke="#63d5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="30" cy="20" r="2.5" fill="#00e5a0"/>
+        <circle cx="10" cy="20" r="2.5" fill="#63d5ff"/>
+      </svg>
+      <div>
+        <div class="login-title">NEXUS OS</div>
+        <div class="login-sub">Home Server Panel v2.1.0</div>
+      </div>
+    </div>
+    <div class="login-field">
+      <div class="login-label">Contraseña</div>
+      <input type="password" class="login-input" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Iniciar sesión</button>
+    <div class="login-error" id="loginError">Credenciales incorrectas</div>
+  </div>
+</div>
+
+<!-- App -->
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="40" height="40" rx="10" fill="rgba(99,213,255,0.08)" stroke="rgba(99,213,255,0.2)" stroke-width="1"/>
+        <path d="M10 20 L16 12 L24 28 L30 20" stroke="#63d5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="30" cy="20" r="2.5" fill="#00e5a0"/>
+        <circle cx="10" cy="20" r="2.5" fill="#63d5ff"/>
+      </svg>
+    </div>
+
+    <a href="index.html" class="nav-item active">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span class="nav-tooltip">Dashboard</span>
+    </a>
+    <a href="store.html" class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="nav-tooltip">Tienda de Apps</span>
+    </a>
+    <a href="#" class="nav-item" onclick="showNotif('Próximamente', 'ok')">
+      <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/></svg>
+      <span class="nav-tooltip">Contenedores</span>
+    </a>
+    <a href="#" class="nav-item" onclick="showNotif('Próximamente', 'ok')">
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <span class="nav-tooltip">Seguridad</span>
+    </a>
+
+    <div class="nav-spacer"></div>
+    <div class="nav-dot"></div>
+    <a href="#" class="nav-item" onclick="showNotif('Próximamente', 'ok')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+      <span class="nav-tooltip">Ajustes</span>
+    </a>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="header">
+      <div>
+        <div class="header-title">Dashboard</div>
+        <div class="header-sub">NEXUS OS v2.1.0</div>
+      </div>
+      <div class="header-spacer"></div>
+      <div class="status-dot"></div>
+      <div class="header-time" id="headerTime">--:--:--</div>
+    </header>
+
+    <div class="content">
+      <!-- Stats -->
+      <div>
+        <div class="section-label">Métricas del sistema</div>
+        <div class="stats-grid">
+          <div class="stat-card stat-cpu">
+            <div class="stat-header">
+              <div class="stat-label">CPU</div>
+              <div class="stat-icon">
+                <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+              </div>
+            </div>
+            <div class="stat-value" id="cpuVal">–%</div>
+            <div class="stat-sub" id="cpuSub">Cargando...</div>
+            <div class="stat-bar"><div class="stat-bar-fill" id="cpuBar" style="width:0%"></div></div>
+          </div>
+
+          <div class="stat-card stat-ram">
+            <div class="stat-header">
+              <div class="stat-label">Memoria RAM</div>
+              <div class="stat-icon">
+                <svg viewBox="0 0 24 24"><path d="M6 19V5h12v14"/><path d="M3 19h18"/><line x1="9" y1="5" x2="9" y2="11"/><line x1="15" y1="5" x2="15" y2="11"/></svg>
+              </div>
+            </div>
+            <div class="stat-value" id="ramVal">–%</div>
+            <div class="stat-sub" id="ramSub">Cargando...</div>
+            <div class="stat-bar"><div class="stat-bar-fill" id="ramBar" style="width:0%;background:linear-gradient(90deg,#7b5ea7,#a07fd4)"></div></div>
+          </div>
+
+          <div class="stat-card stat-disk">
+            <div class="stat-header">
+              <div class="stat-label">Disco</div>
+              <div class="stat-icon">
+                <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              </div>
+            </div>
+            <div class="stat-value" id="diskVal">–%</div>
+            <div class="stat-sub" id="diskSub">Cargando...</div>
+            <div class="stat-bar"><div class="stat-bar-fill" id="diskBar" style="width:0%;background:linear-gradient(90deg,#ffb84d,#ffd580)"></div></div>
+          </div>
+
+          <div class="stat-card stat-docker">
+            <div class="stat-header">
+              <div class="stat-label">Contenedores</div>
+              <div class="stat-icon">
+                <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              </div>
+            </div>
+            <div class="stat-value" id="dockerVal">–</div>
+            <div class="stat-sub" id="dockerSub">activos</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Two col -->
+      <div class="two-col">
+        <!-- Contenedores -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Contenedores Docker</div>
+            <a href="store.html" class="panel-action">+ Instalar app</a>
+          </div>
+          <div class="panel-body">
+            <div id="containerList">
+              <div style="color:var(--text3);font-size:12px;font-family:var(--mono);text-align:center;padding:20px 0">Cargando...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info servidor -->
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Info del servidor</div>
+            </div>
+            <div class="panel-body">
+              <div class="info-grid" id="serverInfo">
+                <div class="info-row"><span class="info-key">Hostname</span><span class="info-val" id="infoHostname">–</span></div>
+                <div class="info-row"><span class="info-key">OS</span><span class="info-val" id="infoOs">–</span></div>
+                <div class="info-row"><span class="info-key">Kernel</span><span class="info-val" id="infoKernel">–</span></div>
+                <div class="info-row"><span class="info-key">CPU</span><span class="info-val" id="infoCpu">–</span></div>
+                <div class="info-row"><span class="info-key">Uptime</span><span class="info-val" id="infoUptime">–</span></div>
+                <div class="info-row"><span class="info-key">Node.js</span><span class="info-val" id="infoNode">–</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Acciones rápidas -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Acciones rápidas</div>
+            </div>
+            <div class="panel-body">
+              <div class="actions-grid">
+                <button class="action-btn" onclick="doDockerPrune()">
+                  <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+                  Limpiar Docker
+                </button>
+                <a href="store.html" class="action-btn" style="text-decoration:none">
+                  <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Nueva app
+                </a>
+                <button class="action-btn danger" onclick="showNotif('Reiniciando...', 'ok')">
+                  <svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 11-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                  Reiniciar
+                </button>
+                <button class="action-btn" onclick="refreshAll()">
+                  <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                  Actualizar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logs -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Logs del sistema</div>
+          <span class="panel-action" onclick="clearLogs()">Limpiar</span>
+        </div>
+        <div class="panel-body">
+          <div class="log-terminal" id="logTerminal">
+            <div class="log-line"><span class="log-time">[--:--:--]</span><span class="log-info">NEXUS OS Dashboard iniciado</span></div>
+            <div class="log-line"><span class="log-time">[--:--:--]</span><span class="log-info">Conectando con backend...</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Notificación -->
+<div class="notif" id="notif"></div>
+
+<script>
+const API = 'http://127.0.0.1:8090';
+let token = localStorage.getItem('nexus_token') || '';
+let wsMetrics = null;
+let cpuHistory = [];
+
+// ── Tiempo ────────────────────────────────────────────────────────────────
+function updateTime() {
+  document.getElementById('headerTime').textContent = new Date().toLocaleTimeString('es-CO');
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+// ── Notificación ──────────────────────────────────────────────────────────
+function showNotif(msg, type='ok') {
+  const el = document.getElementById('notif');
+  el.textContent = (type === 'ok' ? '✓ ' : '✗ ') + msg;
+  el.className = 'notif show ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const pass = document.getElementById('loginPass').value;
+  try {
+    const res = await fetch(`${API}/api/auth/login`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ password: pass })
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    token = data.token;
+    localStorage.setItem('nexus_token', token);
+    document.getElementById('loginOverlay').style.display = 'none';
+    init();
+  } catch {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+document.getElementById('loginPass').addEventListener('keydown', e => e.key === 'Enter' && doLogin());
+
+// ── Auth check ────────────────────────────────────────────────────────────
+async function checkAuth() {
+  if (!token) return false;
+  try {
+    const res = await fetch(`${API}/api/health`);
+    return res.ok;
+  } catch { return false; }
+}
+
+// ── API helpers ───────────────────────────────────────────────────────────
+async function apiFetch(path, opts={}) {
+  const res = await fetch(`${API}${path}`, {
+    ...opts,
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type':'application/json', ...opts.headers }
+  });
+  if (res.status === 401) { token=''; localStorage.removeItem('nexus_token'); location.reload(); }
+  return res.json();
+}
+
+// ── Métricas ──────────────────────────────────────────────────────────────
+function fmtBytes(b) {
+  if (b > 1e9) return (b/1e9).toFixed(1)+'GB';
+  return (b/1e6).toFixed(0)+'MB';
+}
+
+function updateMetrics(m) {
+  // CPU
+  const cpu = m.cpu.percent;
+  document.getElementById('cpuVal').textContent = cpu+'%';
+  document.getElementById('cpuSub').textContent = `${m.cpu.cores} núcleos · load ${m.cpu.loadAvg['1m'].toFixed(2)}`;
+  document.getElementById('cpuBar').style.width = cpu+'%';
+
+  // RAM
+  const ram = m.memory.percent;
+  document.getElementById('ramVal').textContent = ram+'%';
+  document.getElementById('ramSub').textContent = `${fmtBytes(m.memory.used)} / ${fmtBytes(m.memory.total)}`;
+  document.getElementById('ramBar').style.width = ram+'%';
+
+  // Uptime
+  if (m.uptime) document.getElementById('infoUptime').textContent = m.uptime.formatted;
+
+  addLog(`CPU ${cpu}% · RAM ${ram}% · Uptime ${m.uptime?.formatted||'–'}`, 'info');
+}
+
+function updateDocker(d) {
+  document.getElementById('dockerVal').textContent = d.running;
+  document.getElementById('dockerSub').textContent = `${d.running} activos, ${d.stopped} detenidos`;
+
+  const list = document.getElementById('containerList');
+  if (!d.containers.length) {
+    list.innerHTML = '<div style="color:var(--text3);font-size:12px;font-family:var(--mono);text-align:center;padding:20px 0">Sin contenedores</div>';
+    return;
+  }
+  list.innerHTML = d.containers.slice(0,6).map(c => `
+    <div class="container-item">
+      <div class="container-status ${c.state==='running'?'running':'stopped'}"></div>
+      <div class="container-name">${c.name}</div>
+      <div class="container-image">${c.image.split(':')[0].split('/').pop()}</div>
+      <div class="container-badge ${c.state==='running'?'running':'stopped'}">${c.state}</div>
+    </div>
+  `).join('');
+}
+
+// ── Server info ───────────────────────────────────────────────────────────
+async function loadServerInfo() {
+  try {
+    const d = await apiFetch('/api/system/info');
+    document.getElementById('infoHostname').textContent = d.hostname;
+    document.getElementById('infoOs').textContent = d.os;
+    document.getElementById('infoKernel').textContent = d.kernel;
+    document.getElementById('infoCpu').textContent = d.cpuModel?.split(' ').slice(0,3).join(' ') || '–';
+    document.getElementById('infoNode').textContent = d.nodeVersion;
+  } catch {}
+}
+
+// ── Disco ─────────────────────────────────────────────────────────────────
+async function loadDisk() {
+  try {
+    const d = await apiFetch('/api/system/metrics');
+    const root = d.disks?.find(x => x.mountpoint==='/') || d.disks?.[0];
+    if (root) {
+      document.getElementById('diskVal').textContent = root.percent+'%';
+      document.getElementById('diskSub').textContent = `${fmtBytes(root.used)} / ${fmtBytes(root.total)}`;
+      document.getElementById('diskBar').style.width = root.percent+'%';
+    }
+    if (d.docker) updateDocker(d.docker);
+    updateMetrics(d);
+  } catch {}
+}
+
+// ── WebSocket metrics ─────────────────────────────────────────────────────
+function connectWS() {
+  try {
+    wsMetrics = new WebSocket(`ws://127.0.0.1:8090/api/ws/metrics`);
+    wsMetrics.onmessage = e => {
+      const m = JSON.parse(e.data);
+      updateMetrics(m);
+    };
+    wsMetrics.onerror = () => {};
+    wsMetrics.onclose = () => setTimeout(connectWS, 5000);
+  } catch {}
+}
+
+// ── Logs ──────────────────────────────────────────────────────────────────
+function addLog(msg, type='info') {
+  const t = document.getElementById('logTerminal');
+  const time = new Date().toLocaleTimeString('es-CO');
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="log-time">[${time}]</span><span class="log-${type}">${msg}</span>`;
+  t.appendChild(line);
+  if (t.children.length > 60) t.removeChild(t.firstChild);
+  t.scrollTop = t.scrollHeight;
+}
+function clearLogs() { document.getElementById('logTerminal').innerHTML = ''; }
+
+// ── Acciones ──────────────────────────────────────────────────────────────
+async function doDockerPrune() {
+  addLog('Limpiando recursos Docker no usados...', 'warn');
+  try {
+    const d = await apiFetch('/api/docker/prune', { method:'POST' });
+    addLog('Limpieza completada', 'ok');
+    showNotif('Docker limpiado', 'ok');
+  } catch { addLog('Error al limpiar Docker', 'err'); }
+}
+
+async function refreshAll() {
+  addLog('Actualizando métricas...', 'info');
+  await loadDisk();
+  showNotif('Métricas actualizadas', 'ok');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+async function init() {
+  await loadServerInfo();
+  await loadDisk();
+  connectWS();
+  setInterval(loadDisk, 10000);
+  addLog('Backend conectado', 'ok');
+}
+
+// ── Startup ───────────────────────────────────────────────────────────────
+(async () => {
+  const ok = await checkAuth();
+  if (ok && token) {
+    document.getElementById('loginOverlay').style.display = 'none';
+    init();
+  }
+})();
+</script>
+</body>
+</html>
