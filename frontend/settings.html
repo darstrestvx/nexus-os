@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS OS — Ajustes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#080c10;--bg2:#0d1117;--surface:#151e28;--surface2:#1a2433;--surface3:#1f2c3d;--border:rgba(99,213,255,0.07);--border-h:rgba(99,213,255,0.18);--accent:#63d5ff;--accent2:#7b5ea7;--accent3:#00e5a0;--warn:#ffb84d;--danger:#ff4d6d;--text:#e8f4f8;--text2:rgba(232,244,248,0.55);--text3:rgba(232,244,248,0.25);--mono:'Space Mono',monospace;--sans:'Syne',sans-serif;--body:'Inter',sans-serif;--r:12px;--rl:18px;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:var(--body);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(99,213,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(99,213,255,0.012) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .layout{display:grid;grid-template-columns:72px 1fr;min-height:100vh;position:relative;z-index:1;}
+  .sidebar{display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:6px;border-right:1px solid var(--border);background:rgba(13,17,23,0.85);backdrop-filter:blur(12px);position:sticky;top:0;height:100vh;}
+  .logo{width:40px;height:40px;margin-bottom:16px;}
+  .nav-item{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:10px;cursor:pointer;transition:all 0.2s;color:var(--text3);position:relative;text-decoration:none;}
+  .nav-item:hover{color:var(--text2);background:var(--surface);}
+  .nav-item.active{color:var(--accent);background:rgba(99,213,255,0.08);}
+  .nav-item.active::before{content:'';position:absolute;left:0;height:40%;width:2px;background:var(--accent);border-radius:0 2px 2px 0;}
+  .nav-item svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+  .nav-spacer{flex:1;}.nav-dot{width:6px;height:6px;border-radius:50%;background:var(--accent3);box-shadow:0 0 8px var(--accent3);margin:8px 0;}
+  .nav-tooltip{position:absolute;left:56px;background:var(--surface2);border:1px solid var(--border-h);color:var(--text);font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.15s;z-index:100;}
+  .nav-item:hover .nav-tooltip{opacity:1;}
+  .main{display:flex;flex-direction:column;min-height:100vh;}
+  .header{display:flex;align-items:center;gap:16px;padding:16px 28px;border-bottom:1px solid var(--border);background:rgba(8,12,16,0.85);backdrop-filter:blur(12px);}
+  .header-title{font-family:var(--sans);font-size:16px;font-weight:700;letter-spacing:-0.02em;}
+  .header-sub{font-size:11px;color:var(--text3);font-family:var(--mono);}
+  .header-spacer{flex:1;}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:var(--accent3);box-shadow:0 0 8px var(--accent3);animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+  .content{padding:24px 28px;flex:1;display:flex;flex-direction:column;gap:20px;max-width:800px;}
+  .section-label{font-family:var(--sans);font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .section-label::before{content:'';width:12px;height:2px;background:var(--accent);border-radius:1px;}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;}
+  .panel-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .panel-title{font-family:var(--sans);font-size:13px;font-weight:700;}
+  .panel-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+  .panel-body{padding:20px;}
+  .field{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;}
+  .field:last-child{margin-bottom:0;}
+  .field-label{font-size:12px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.06em;}
+  .field-input{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border-color 0.2s;width:100%;}
+  .field-input:focus{border-color:var(--border-h);}
+  .field-desc{font-size:11px;color:var(--text3);}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);}
+  .toggle-row:last-child{border-bottom:none;}
+  .toggle-info{}
+  .toggle-name{font-size:13px;font-weight:500;}
+  .toggle-desc{font-size:11px;color:var(--text3);margin-top:3px;}
+  .toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+  .toggle input{opacity:0;width:0;height:0;}
+  .toggle-slider{position:absolute;inset:0;background:var(--surface3);border-radius:12px;cursor:pointer;transition:0.3s;border:1px solid var(--border);}
+  .toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:2px;top:2px;background:var(--text3);border-radius:50%;transition:0.3s;}
+  .toggle input:checked + .toggle-slider{background:rgba(99,213,255,0.15);border-color:rgba(99,213,255,0.3);}
+  .toggle input:checked + .toggle-slider::before{transform:translateX(20px);background:var(--accent);}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:9px;font-size:13px;font-family:var(--sans);font-weight:600;cursor:pointer;transition:all 0.2s;border:1px solid transparent;}
+  .btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .btn-primary{background:rgba(99,213,255,0.1);border-color:rgba(99,213,255,0.25);color:var(--accent);}
+  .btn-primary:hover{background:rgba(99,213,255,0.18);}
+  .btn-danger{background:rgba(255,77,109,0.1);border-color:rgba(255,77,109,0.2);color:var(--danger);}
+  .btn-danger:hover{background:rgba(255,77,109,0.18);}
+  .btn-success{background:rgba(0,229,160,0.1);border-color:rgba(0,229,160,0.2);color:var(--accent3);}
+  .btn-success:hover{background:rgba(0,229,160,0.18);}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;}
+  .info-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+  .info-row:last-child{border-bottom:none;}
+  .info-key{font-size:12px;color:var(--text3);}
+  .info-val{font-family:var(--mono);font-size:12px;color:var(--text2);}
+  .notif{position:fixed;bottom:24px;right:24px;z-index:500;background:var(--surface2);border:1px solid var(--border-h);border-radius:10px;padding:12px 18px;font-size:13px;font-family:var(--mono);transform:translateY(80px);opacity:0;transition:all 0.3s ease;}
+  .notif.show{transform:translateY(0);opacity:1;}
+  .notif.ok{border-color:rgba(0,229,160,0.3);color:var(--accent3);}
+  .notif.err{border-color:rgba(255,77,109,0.3);color:var(--danger);}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  .panel{animation:fadeUp 0.35s ease both;}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="logo">
+      <svg viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="10" fill="rgba(99,213,255,0.08)" stroke="rgba(99,213,255,0.2)" stroke-width="1"/><path d="M10 20 L16 12 L24 28 L30 20" stroke="#63d5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="30" cy="20" r="2.5" fill="#00e5a0"/><circle cx="10" cy="20" r="2.5" fill="#63d5ff"/></svg>
+    </div>
+    <a href="index.html" class="nav-item"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="nav-tooltip">Dashboard</span></a>
+    <a href="store.html" class="nav-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-tooltip">Tienda</span></a>
+    <a href="containers.html" class="nav-item"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/></svg><span class="nav-tooltip">Contenedores</span></a>
+    <a href="security.html" class="nav-item"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span class="nav-tooltip">Seguridad</span></a>
+    <div class="nav-spacer"></div>
+    <div class="nav-dot"></div>
+    <a href="settings.html" class="nav-item active"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg><span class="nav-tooltip">Ajustes</span></a>
+  </aside>
+
+  <div class="main">
+    <header class="header">
+      <div><div class="header-title">Ajustes</div><div class="header-sub">NEXUS OS v2.1.0</div></div>
+      <div class="header-spacer"></div>
+      <div class="status-dot"></div>
+    </header>
+
+    <div class="content">
+
+      <!-- Información del sistema -->
+      <div class="panel">
+        <div class="panel-header">
+          <div><div class="panel-title">Información del sistema</div></div>
+        </div>
+        <div class="panel-body">
+          <div class="info-row"><span class="info-key">Versión NEXUS OS</span><span class="info-val">v2.1.0</span></div>
+          <div class="info-row"><span class="info-key">Hostname</span><span class="info-val" id="infoHostname">—</span></div>
+          <div class="info-row"><span class="info-key">Sistema operativo</span><span class="info-val" id="infoOs">—</span></div>
+          <div class="info-row"><span class="info-key">Kernel</span><span class="info-val" id="infoKernel">—</span></div>
+          <div class="info-row"><span class="info-key">CPU</span><span class="info-val" id="infoCpu">—</span></div>
+          <div class="info-row"><span class="info-key">Node.js</span><span class="info-val" id="infoNode">—</span></div>
+          <div class="info-row"><span class="info-key">IP Tailscale</span><span class="info-val">100.79.144.17</span></div>
+        </div>
+      </div>
+
+      <!-- Cambiar contraseña -->
+      <div class="panel" style="animation-delay:0.05s">
+        <div class="panel-header">
+          <div><div class="panel-title">Cambiar contraseña</div><div class="panel-sub">Actualiza la contraseña de acceso al panel</div></div>
+        </div>
+        <div class="panel-body">
+          <div class="field">
+            <div class="field-label">Nueva contraseña</div>
+            <input type="password" class="field-input" id="newPass" placeholder="mínimo 8 caracteres">
+          </div>
+          <div class="field">
+            <div class="field-label">Confirmar contraseña</div>
+            <input type="password" class="field-input" id="confirmPass" placeholder="repite la contraseña">
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" onclick="changePassword()">
+              <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v14a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Guardar contraseña
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preferencias -->
+      <div class="panel" style="animation-delay:0.1s">
+        <div class="panel-header">
+          <div><div class="panel-title">Preferencias</div></div>
+        </div>
+        <div class="panel-body">
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-name">Inicio automático</div>
+              <div class="toggle-desc">NEXUS OS inicia con el sistema</div>
+            </div>
+            <label class="toggle"><input type="checkbox" checked id="autostart"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-name">Actualizaciones automáticas de Docker</div>
+              <div class="toggle-desc">Actualizar imágenes de contenedores automáticamente</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="autoUpdate"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-name">Logs detallados</div>
+              <div class="toggle-desc">Guardar logs completos de acceso y sistema</div>
+            </div>
+            <label class="toggle"><input type="checkbox" checked id="verboseLogs"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Backup -->
+      <div class="panel" style="animation-delay:0.15s">
+        <div class="panel-header">
+          <div><div class="panel-title">Backup y restauración</div><div class="panel-sub">Guarda la configuración y datos del sistema</div></div>
+        </div>
+        <div class="panel-body">
+          <div class="actions">
+            <button class="btn btn-success" onclick="doBackup()">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Crear backup ahora
+            </button>
+          </div>
+          <div style="margin-top:14px;font-size:11px;color:var(--text3);font-family:var(--mono)">
+            Los backups se guardan en <span style="color:var(--accent)">/var/lib/nexus/backups/</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zona peligrosa -->
+      <div class="panel" style="animation-delay:0.2s;border-color:rgba(255,77,109,0.15)">
+        <div class="panel-header" style="border-color:rgba(255,77,109,0.1)">
+          <div><div class="panel-title" style="color:var(--danger)">Zona peligrosa</div><div class="panel-sub">Acciones irreversibles del sistema</div></div>
+        </div>
+        <div class="panel-body">
+          <div class="actions">
+            <button class="btn btn-danger" onclick="doShutdown()">
+              <svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 11-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+              Apagar servidor
+            </button>
+            <button class="btn btn-danger" onclick="doReboot()">
+              <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+              Reiniciar servidor
+            </button>
+            <button class="btn btn-danger" onclick="doLogout()">
+              <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+const API = '';
+const token = localStorage.getItem('nexus_token') || '';
+if (!token) location.href = 'index.html';
+
+function showNotif(msg, type='ok') {
+  const el = document.getElementById('notif');
+  el.textContent = (type==='ok'?'✓ ':'✗ ') + msg;
+  el.className = 'notif show ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+async function apiFetch(path, opts={}) {
+  const res = await fetch(API + path, { ...opts, headers:{ 'Authorization':`Bearer ${token}`, 'Content-Type':'application/json', ...opts.headers } });
+  if (res.status === 401) { localStorage.removeItem('nexus_token'); location.href = 'index.html'; }
+  return res.json();
+}
+
+async function loadInfo() {
+  try {
+    const d = await apiFetch('/api/system/info');
+    document.getElementById('infoHostname').textContent = d.hostname || '—';
+    document.getElementById('infoOs').textContent = d.os || '—';
+    document.getElementById('infoKernel').textContent = d.kernel || '—';
+    document.getElementById('infoCpu').textContent = d.cpuModel?.split(' ').slice(0,4).join(' ') || '—';
+    document.getElementById('infoNode').textContent = d.nodeVersion || '—';
+  } catch {}
+}
+
+function changePassword() {
+  const np = document.getElementById('newPass').value;
+  const cp = document.getElementById('confirmPass').value;
+  if (!np || np.length < 8) { showNotif('Mínimo 8 caracteres', 'err'); return; }
+  if (np !== cp) { showNotif('Las contraseñas no coinciden', 'err'); return; }
+  showNotif('Para cambiar la contraseña ejecuta en el servidor: sudo sed -i \'s/NEXUS_ADMIN_TOKEN=.*/NEXUS_ADMIN_TOKEN=' + np + '/\' /etc/nexus-os/secrets.env && nexus restart', 'ok');
+}
+
+function doBackup() {
+  showNotif('Ejecuta en el servidor: nexus backup', 'ok');
+}
+
+async function doShutdown() {
+  if (!confirm('¿Apagar el servidor? Perderás acceso al panel.')) return;
+  try { await apiFetch('/api/system/shutdown', { method:'POST' }); showNotif('Apagando servidor...', 'ok'); } catch {}
+}
+
+async function doReboot() {
+  if (!confirm('¿Reiniciar el servidor?')) return;
+  try { await apiFetch('/api/system/reboot', { method:'POST' }); showNotif('Reiniciando...', 'ok'); } catch {}
+}
+
+function doLogout() {
+  localStorage.removeItem('nexus_token');
+  location.href = 'index.html';
+}
+
+loadInfo();
+</script>
+</body>
+</html>

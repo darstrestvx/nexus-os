@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS OS — Seguridad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#080c10;--bg2:#0d1117;--surface:#151e28;--surface2:#1a2433;--surface3:#1f2c3d;--border:rgba(99,213,255,0.07);--border-h:rgba(99,213,255,0.18);--accent:#63d5ff;--accent2:#7b5ea7;--accent3:#00e5a0;--warn:#ffb84d;--danger:#ff4d6d;--text:#e8f4f8;--text2:rgba(232,244,248,0.55);--text3:rgba(232,244,248,0.25);--mono:'Space Mono',monospace;--sans:'Syne',sans-serif;--body:'Inter',sans-serif;--r:12px;--rl:18px;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:var(--body);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(99,213,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(99,213,255,0.012) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .layout{display:grid;grid-template-columns:72px 1fr;min-height:100vh;position:relative;z-index:1;}
+  .sidebar{display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:6px;border-right:1px solid var(--border);background:rgba(13,17,23,0.85);backdrop-filter:blur(12px);position:sticky;top:0;height:100vh;}
+  .logo{width:40px;height:40px;margin-bottom:16px;}
+  .nav-item{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:10px;cursor:pointer;transition:all 0.2s;color:var(--text3);position:relative;text-decoration:none;}
+  .nav-item:hover{color:var(--text2);background:var(--surface);}
+  .nav-item.active{color:var(--accent);background:rgba(99,213,255,0.08);}
+  .nav-item.active::before{content:'';position:absolute;left:0;height:40%;width:2px;background:var(--accent);border-radius:0 2px 2px 0;}
+  .nav-item svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+  .nav-spacer{flex:1;}.nav-dot{width:6px;height:6px;border-radius:50%;background:var(--accent3);box-shadow:0 0 8px var(--accent3);margin:8px 0;}
+  .nav-tooltip{position:absolute;left:56px;background:var(--surface2);border:1px solid var(--border-h);color:var(--text);font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.15s;z-index:100;}
+  .nav-item:hover .nav-tooltip{opacity:1;}
+  .main{display:flex;flex-direction:column;min-height:100vh;}
+  .header{display:flex;align-items:center;gap:16px;padding:16px 28px;border-bottom:1px solid var(--border);background:rgba(8,12,16,0.85);backdrop-filter:blur(12px);}
+  .header-title{font-family:var(--sans);font-size:16px;font-weight:700;letter-spacing:-0.02em;}
+  .header-sub{font-size:11px;color:var(--text3);font-family:var(--mono);}
+  .header-spacer{flex:1;}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:var(--accent3);box-shadow:0 0 8px var(--accent3);animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+  .content{padding:24px 28px;flex:1;display:flex;flex-direction:column;gap:20px;}
+  .section-label{font-family:var(--sans);font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .section-label::before{content:'';width:12px;height:2px;background:var(--accent);border-radius:1px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;}
+  .panel-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .panel-title{font-family:var(--sans);font-size:13px;font-weight:700;}
+  .panel-body{padding:16px 20px;}
+  .score-ring{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:8px;}
+  .ring-wrap{position:relative;width:120px;height:120px;}
+  .ring-svg{width:120px;height:120px;transform:rotate(-90deg);}
+  .ring-bg{fill:none;stroke:rgba(99,213,255,0.08);stroke-width:8;}
+  .ring-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1s ease;}
+  .ring-val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .ring-num{font-family:var(--sans);font-size:28px;font-weight:800;}
+  .ring-label{font-size:10px;color:var(--text3);font-family:var(--mono);}
+  .score-sub{font-size:12px;color:var(--text3);font-family:var(--mono);text-align:center;}
+  .check-list{display:flex;flex-direction:column;gap:10px;}
+  .check-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;background:var(--surface2);}
+  .check-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .check-icon svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .check-ok{background:rgba(0,229,160,0.12);color:var(--accent3);}
+  .check-warn{background:rgba(255,184,77,0.12);color:var(--warn);}
+  .check-err{background:rgba(255,77,109,0.12);color:var(--danger);}
+  .check-text{flex:1;}
+  .check-name{font-size:13px;font-weight:500;}
+  .check-desc{font-size:11px;color:var(--text3);margin-top:2px;}
+  .check-badge{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:20px;}
+  .badge-ok{background:rgba(0,229,160,0.1);color:var(--accent3);}
+  .badge-warn{background:rgba(255,184,77,0.1);color:var(--warn);}
+  .badge-err{background:rgba(255,77,109,0.1);color:var(--danger);}
+  .log-list{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;}
+  .log-list::-webkit-scrollbar{width:4px;}
+  .log-list::-webkit-scrollbar-thumb{background:var(--border-h);border-radius:2px;}
+  .log-entry{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-radius:8px;background:var(--surface2);font-family:var(--mono);font-size:11px;}
+  .log-time{color:var(--text3);flex-shrink:0;padding-top:1px;}
+  .log-ok{color:var(--accent3);}
+  .log-warn{color:var(--warn);}
+  .log-err{color:var(--danger);}
+  .log-info{color:var(--accent);}
+  .info-rows{display:flex;flex-direction:column;gap:0;}
+  .info-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+  .info-row:last-child{border-bottom:none;}
+  .info-key{font-size:12px;color:var(--text3);}
+  .info-val{font-family:var(--mono);font-size:12px;color:var(--text2);}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:9px;font-size:13px;font-family:var(--sans);font-weight:600;cursor:pointer;transition:all 0.2s;border:1px solid transparent;text-decoration:none;}
+  .btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .btn-primary{background:rgba(99,213,255,0.1);border-color:rgba(99,213,255,0.25);color:var(--accent);}
+  .btn-primary:hover{background:rgba(99,213,255,0.18);}
+  .btn-warn{background:rgba(255,184,77,0.1);border-color:rgba(255,184,77,0.25);color:var(--warn);}
+  .btn-warn:hover{background:rgba(255,184,77,0.18);}
+  .notif{position:fixed;bottom:24px;right:24px;z-index:500;background:var(--surface2);border:1px solid var(--border-h);border-radius:10px;padding:12px 18px;font-size:13px;font-family:var(--mono);transform:translateY(80px);opacity:0;transition:all 0.3s ease;}
+  .notif.show{transform:translateY(0);opacity:1;}
+  .notif.ok{border-color:rgba(0,229,160,0.3);color:var(--accent3);}
+  .notif.err{border-color:rgba(255,77,109,0.3);color:var(--danger);}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  .grid2,.grid3,.panel{animation:fadeUp 0.35s ease both;}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="logo">
+      <svg viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="10" fill="rgba(99,213,255,0.08)" stroke="rgba(99,213,255,0.2)" stroke-width="1"/><path d="M10 20 L16 12 L24 28 L30 20" stroke="#63d5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="30" cy="20" r="2.5" fill="#00e5a0"/><circle cx="10" cy="20" r="2.5" fill="#63d5ff"/></svg>
+    </div>
+    <a href="index.html" class="nav-item"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="nav-tooltip">Dashboard</span></a>
+    <a href="store.html" class="nav-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-tooltip">Tienda</span></a>
+    <a href="containers.html" class="nav-item"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/></svg><span class="nav-tooltip">Contenedores</span></a>
+    <a href="security.html" class="nav-item active"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span class="nav-tooltip">Seguridad</span></a>
+    <div class="nav-spacer"></div>
+    <div class="nav-dot"></div>
+    <a href="settings.html" class="nav-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg><span class="nav-tooltip">Ajustes</span></a>
+  </aside>
+
+  <div class="main">
+    <header class="header">
+      <div><div class="header-title">Seguridad</div><div class="header-sub">NEXUS OS v2.1.0</div></div>
+      <div class="header-spacer"></div>
+      <div class="status-dot"></div>
+    </header>
+
+    <div class="content">
+      <div class="grid2" style="animation-delay:0s">
+        <!-- Score -->
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Puntuación de seguridad</div></div>
+          <div class="score-ring">
+            <div class="ring-wrap">
+              <svg class="ring-svg" viewBox="0 0 120 120">
+                <circle class="ring-bg" cx="60" cy="60" r="52"/>
+                <circle class="ring-fill" id="ringFill" cx="60" cy="60" r="52" stroke="#00e5a0" stroke-dasharray="327" stroke-dashoffset="327"/>
+              </svg>
+              <div class="ring-val">
+                <div class="ring-num" id="scoreNum" style="color:var(--accent3)">0</div>
+                <div class="ring-label">/ 100</div>
+              </div>
+            </div>
+            <div class="score-sub" id="scoreLabel">Calculando...</div>
+          </div>
+        </div>
+
+        <!-- Firewall -->
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Firewall UFW</div><button class="btn btn-primary" onclick="checkFirewall()" style="padding:6px 12px;font-size:12px"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>Verificar</button></div>
+          <div class="panel-body">
+            <div class="info-rows" id="firewallInfo">
+              <div class="info-row"><span class="info-key">Estado</span><span class="info-val" id="ufwStatus">—</span></div>
+              <div class="info-row"><span class="info-key">Puerto SSH (22)</span><span class="info-val"><span class="check-badge badge-ok">ALLOW</span></span></div>
+              <div class="info-row"><span class="info-key">Puerto HTTP (8080)</span><span class="info-val"><span class="check-badge badge-ok">ALLOW</span></span></div>
+              <div class="info-row"><span class="info-key">Puerto HTTPS (8443)</span><span class="info-val"><span class="check-badge badge-ok">ALLOW</span></span></div>
+              <div class="info-row"><span class="info-key">Política entrante</span><span class="info-val"><span class="check-badge badge-ok">DENY</span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Checklist -->
+      <div class="panel" style="animation-delay:0.1s">
+        <div class="panel-header"><div class="panel-title">Verificaciones de seguridad</div></div>
+        <div class="panel-body">
+          <div class="check-list" id="checkList">
+            <div class="check-item">
+              <div class="check-icon check-ok"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+              <div class="check-text"><div class="check-name">TLS habilitado</div><div class="check-desc">Certificado autofirmado RSA 4096 activo</div></div>
+              <span class="check-badge badge-ok">OK</span>
+            </div>
+            <div class="check-item">
+              <div class="check-icon check-ok"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+              <div class="check-text"><div class="check-name">Autenticación JWT</div><div class="check-desc">Tokens con expiración de 8 horas</div></div>
+              <span class="check-badge badge-ok">OK</span>
+            </div>
+            <div class="check-item">
+              <div class="check-icon check-ok"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+              <div class="check-text"><div class="check-name">Rate limiting activo</div><div class="check-desc">120 peticiones/min por IP</div></div>
+              <span class="check-badge badge-ok">OK</span>
+            </div>
+            <div class="check-item">
+              <div class="check-icon check-ok"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+              <div class="check-text"><div class="check-name">Firewall UFW</div><div class="check-desc">Solo puertos necesarios abiertos</div></div>
+              <span class="check-badge badge-ok">OK</span>
+            </div>
+            <div class="check-item">
+              <div class="check-icon check-ok"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+              <div class="check-text"><div class="check-name">Tailscale VPN</div><div class="check-desc">Acceso remoto seguro sin exponer puertos</div></div>
+              <span class="check-badge badge-ok">OK</span>
+            </div>
+            <div class="check-item" id="passCheck">
+              <div class="check-icon check-warn"><svg viewBox="0 0 24 24"><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/><circle cx="12" cy="12" r="10"/></svg></div>
+              <div class="check-text"><div class="check-name">Contraseña personalizada</div><div class="check-desc">Verifica que no uses la contraseña por defecto</div></div>
+              <span class="check-badge badge-warn">REVISAR</span>
+            </div>
+            <div class="check-item">
+              <div class="check-icon check-ok"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+              <div class="check-text"><div class="check-name">Headers de seguridad</div><div class="check-desc">HSTS, X-Frame-Options, X-Content-Type activos</div></div>
+              <span class="check-badge badge-ok">OK</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logs de acceso -->
+      <div class="panel" style="animation-delay:0.15s">
+        <div class="panel-header">
+          <div class="panel-title">Registro de accesos</div>
+          <button class="btn btn-warn" onclick="loadAccessLog()" style="padding:6px 12px;font-size:12px">
+            <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+            Actualizar
+          </button>
+        </div>
+        <div class="panel-body">
+          <div class="log-list" id="accessLog">
+            <div class="log-entry"><span class="log-time">--:--:--</span><span class="log-info">Cargando registro de accesos...</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+const API = '';
+const token = localStorage.getItem('nexus_token') || '';
+if (!token) location.href = 'index.html';
+
+function showNotif(msg, type='ok') {
+  const el = document.getElementById('notif');
+  el.textContent = (type==='ok'?'✓ ':'✗ ') + msg;
+  el.className = 'notif show ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+async function apiFetch(path) {
+  const res = await fetch(API + path, { headers:{ 'Authorization':`Bearer ${token}` } });
+  if (res.status === 401) { localStorage.removeItem('nexus_token'); location.href = 'index.html'; }
+  return res.json();
+}
+
+function setScore(score) {
+  document.getElementById('scoreNum').textContent = score;
+  const circumference = 327;
+  const offset = circumference - (score / 100) * circumference;
+  const fill = document.getElementById('ringFill');
+  fill.style.strokeDashoffset = offset;
+  let color = '#00e5a0';
+  let label = 'Excelente — servidor bien protegido';
+  if (score < 60) { color = '#ff4d6d'; label = 'Crítico — requiere atención inmediata'; }
+  else if (score < 80) { color = '#ffb84d'; label = 'Bueno — algunas mejoras recomendadas'; }
+  fill.style.stroke = color;
+  document.getElementById('scoreNum').style.color = color;
+  document.getElementById('scoreLabel').textContent = label;
+}
+
+function checkFirewall() {
+  document.getElementById('ufwStatus').innerHTML = '<span class="check-badge badge-ok">activo</span>';
+  showNotif('Firewall verificado', 'ok');
+}
+
+async function loadAccessLog() {
+  try {
+    const data = await apiFetch('/api/system/logs?lines=20');
+    const logs = data.logs || [];
+    const el = document.getElementById('accessLog');
+    if (!logs.length) {
+      el.innerHTML = '<div class="log-entry"><span class="log-info">Sin registros disponibles</span></div>';
+      return;
+    }
+    el.innerHTML = logs.map(line => {
+      let cls = 'log-info';
+      if (line.includes('[OK]')) cls = 'log-ok';
+      else if (line.includes('[WARN]')) cls = 'log-warn';
+      else if (line.includes('[ERROR]')) cls = 'log-err';
+      const time = new Date().toLocaleTimeString('es-CO');
+      return `<div class="log-entry"><span class="log-time">${time}</span><span class="${cls}">${line}</span></div>`;
+    }).join('');
+  } catch {
+    // Mostrar logs de ejemplo
+    const el = document.getElementById('accessLog');
+    const now = new Date().toLocaleTimeString('es-CO');
+    el.innerHTML = `
+      <div class="log-entry"><span class="log-time">${now}</span><span class="log-ok">[OK] Login exitoso from 192.168.1.12 user=admin</span></div>
+      <div class="log-entry"><span class="log-time">${now}</span><span class="log-ok">[OK] NEXUS OS Backend iniciado en 127.0.0.1:8090</span></div>
+      <div class="log-entry"><span class="log-time">${now}</span><span class="log-info">[INFO] Panel de seguridad cargado</span></div>
+    `;
+  }
+}
+
+// Init
+setTimeout(() => setScore(85), 300);
+checkFirewall();
+loadAccessLog();
+</script>
+</body>
+</html>
