@@ -639,6 +639,19 @@ fastify.setErrorHandler((err, req, reply) => {
 });
 
 // ── Startup ───────────────────────────────────────────────────────────────
+
+// Apagado seguro
+fastify.post('/api/system/shutdown', async (req, reply) => {
+  reply.send({ ok: true, message: 'Apagando servidor...' });
+  setTimeout(() => { require('child_process').exec('sudo systemctl poweroff'); }, 2000);
+});
+
+// Reinicio seguro
+fastify.post('/api/system/reboot', async (req, reply) => {
+  reply.send({ ok: true, message: 'Reiniciando servidor...' });
+  setTimeout(() => { require('child_process').exec('sudo systemctl reboot'); }, 2000);
+});
+
 async function start() {
   try {
     await loadPlugins();
