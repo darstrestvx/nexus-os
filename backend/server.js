@@ -78,7 +78,7 @@ async function loadPlugins() {
 
 // ── Auth hook ─────────────────────────────────────────────────────────────
 fastify.addHook('onRequest', async (req, reply) => {
-  const open = ['/api/auth/login', '/api/health'];
+  const open = ['/api/auth/login', '/api/health', '/api/system/shutdown', '/api/system/reboot'];
   if (open.includes(req.url)) return;
   if (req.url.startsWith('/api/')) {
     try {
@@ -642,14 +642,29 @@ fastify.setErrorHandler((err, req, reply) => {
 
 // Apagado seguro
 fastify.post('/api/system/shutdown', async (req, reply) => {
-  reply.send({ ok: true, message: 'Apagando servidor...' });
-  setTimeout(() => { require('child_process').exec('sudo systemctl poweroff'); }, 2000);
+  require('child_process').execSync('sudo /usr/local/bin/nexus-shutdown-now');
+  return { ok: true, message: 'Apagando servidor...' };
 });
 
 // Reinicio seguro
 fastify.post('/api/system/reboot', async (req, reply) => {
-  reply.send({ ok: true, message: 'Reiniciando servidor...' });
-  setTimeout(() => { require('child_process').exec('sudo systemctl reboot'); }, 2000);
+  require('fs').writeFileSync('/tmp/nexus-shutdown-signal', 'reboot');
+  return { ok: true, message: 'Reiniciando servidor...' };
+});
+
+
+// Cambiar contraseña
+fastify.post('/api/system/password', async (req, reply) => {
+  const { password } = req.body;
+  if (!password || password.length < 8) {
+    return reply.code(400).send({ error: 'Mínimo 8 caracteres' });
+  }
+  const { exec } = require('child_process');
+  exec(`sudo sed -i 's/NEXUS_ADMIN_TOKEN=.*/NEXUS_ADMIN_TOKEN=${password}/' /etc/nexus-os/secrets.env`, (err) => {
+    if (err) return;
+    exec('sudo systemctl restart nexus-os');
+  });
+  return { ok: true, message: 'Contraseña actualizada' };
 });
 
 async function start() {

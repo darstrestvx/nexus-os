@@ -1,0 +1,18 @@
+[Unit]
+Description=NEXUS OS Backend
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=nexus
+WorkingDirectory=/opt/nexus-os/backend
+ExecStart=/usr/bin/node /opt/nexus-os/backend/server.js
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=false
+PrivateTmp=true
+EnvironmentFile=-/etc/nexus-os/secrets.env
+
+[Install]
+WantedBy=multi-user.target
